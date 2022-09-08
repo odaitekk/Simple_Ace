@@ -6,7 +6,7 @@
 // #include <PID_v1.h>
 
 SHT20 sht;
-TaskHandle_t CheckBreath,HandleSensor,HandleHeater,HandleData,HandleGraph,HandleSample,HandleRestoreH,HandleRestoreS;
+TaskHandle_t CheckBreath,HandleSensor,HandleHeater,HandleData,HandleGraph,HandleSample,HandleRestoreH,HandleRestoreS,HandleConc;
 // double Kp=2, Ki=5, Kd=1;
 // double Setpoint = 1550;
 // double Input, Output;
@@ -22,6 +22,7 @@ double upload_buffer;
 double upload_buffer_1;
 double upload_buffer_2;
 double upload_buffer_3; 
+int16_t baseline;
 
 // BLYNK_CONNECTED()
 // {
@@ -52,7 +53,8 @@ double upload_buffer_3;
 void pinSetup(){
   pinMode(pumpPin, OUTPUT);
   pinMode(solPin, OUTPUT);
-  // pinMode(fanPin, OUTPUT);
+  pinMode(colPin,OUTPUT);
+  pinMode(NTCC,INPUT);
   pinMode(btn_rst, INPUT);
 }
 
@@ -60,7 +62,7 @@ void analogSetup(){
   ledcSetup(colChannel, freq, resolution);
   ledcAttachPin(colPin, colChannel);
   ledcWrite(colChannel, dutyCycle_col);
-  dacWrite(pumpPin, 255);
+  dacWrite(pumpPin,128);
   delay(100);
   dacWrite(pumpPin, dutyCycle_pump);
 }
@@ -137,24 +139,6 @@ void restore_humidity(){
     }  
 }
 
-double ads_convert(int value, bool resist) {
-  double volt;
-  const double ref_r = 9990;
-  const double V_in = 3.3;
-  double sen_r;
-  volt = value * LSB;
-  switch (resist) {
-    case (false):
-      Serial.println(volt);
-      return volt;
-      break;
-    case (true):
-      sen_r = ref_r * (V_in - volt) / volt;
-      Serial.println(sen_r);
-      return sen_r;
-      break;
-  }
-}
 
 double sort_reject(double arr[], int arr_size) {
   double buff;
@@ -246,11 +230,13 @@ int baselineRead(int channel) {
   float mean = 0;
   for (int i = 0; i < baseSample; i++ ) {
     toSort[i] = ads.readADC_SingleEnded(channel);
-    delay(1);
+    vTaskDelay(1);
+    // delay(1);
   }
   for (int i = 0; i < baseSample; i++) {
     mean = mean + toSort[i];
-    delay(1);
+    // delay(1);
+    vTaskDelay(1);
   }
   mean /= baseSample;
   return int(mean);
@@ -261,29 +247,53 @@ int ref;
 void restore_baseline(){
   temp = baselineRead(CO2_channel );
   Serial.println(temp);
-  delay(10);
+  // delay(10);
+  vTaskDelay(10);
   ref = baselineRead(CO2_channel );
   Serial.println(ref);
-  delay(10);
+  // delay(10);
+  vTaskDelay(10);
+
   if (temp-ref <3 && temp-ref >-3) {
     printf("Found Baseline\n");
-    delay(10);
+    // delay(10);
+    vTaskDelay(10);
+    baseline = temp;
+    printf("Basleine: %d", baseline);
     vTaskResume(HandleSample);
     vTaskSuspend(HandleRestoreS);
   }
 }
 
-double concentration_ethanol( double temp, int baseline) {
-  double acetone_start = 900;
-  double acetone_end = 1200;
+double ads_convert(int value, bool resist) {
+  double volt;
+  const double ref_r = 9990;
+  const double V_in = 3.3;
+  double sen_r;
+  volt = value * LSB;
+  switch (resist) {
+    case (false):
+      Serial.println(volt);
+      return volt;
+      break;
+    case (true):
+      sen_r = ref_r * (V_in - volt) / volt;
+      Serial.println(sen_r);
+      return sen_r;
+      break;
+  }
+}
+
+double concentration_ethanol( double temp, int baseline) { //reamin to be calibrate
+  double acetone_start = 100;
+  double acetone_end = 200;
   double coec  = 55 / temp;
   int peak = 0;
   acetone_start = acetone_start * coec;
   acetone_end = acetone_end * coec;
   printf("%d , %d\n", (int)acetone_start, (int)acetone_end);
   for ( int i = (int)acetone_start - 1 ; i <= (int) acetone_end - 1; i++) {
-    printf("%d\n", CO2_arr[i]);
-    printf("%d\n", i);
+    printf("%d,%d\n", i,CO2_arr[i]);
     if ( CO2_arr[i] > peak) {
       peak = CO2_arr[i];
       printf("Replaced\n");
@@ -291,10 +301,60 @@ double concentration_ethanol( double temp, int baseline) {
   }
   printf("Peak value is %d.\n", peak);
   printf("Baseline value is %d.\n", baseline);
-  // double ratio =  peak / baseline;
-  // printf("%d\n", baseline);
-  // printf(" Acetone Concentration: %.5f \n", ratio);
   return(peak);
+}
+
+void calculate_conc(){
+  int peak = 0;
+  peak = concentration_ethanol(temperate,baseline);vTaskDelay(1);
+  printf("Find peak ok\n");
+  double peak_resist_Ace = ads_convert(peak, true);vTaskDelay(1);
+  printf("Find resist ok\n");
+  double baseline_resist_Ace = ads_convert(baseline, true);vTaskDelay(1);
+  ratio_Ace =  ratio_calibration(baseline_resist_Ace, peak_resist_Ace, true);vTaskDelay(1);
+  printf("Breath Analysis Result:\n");
+  printf("Peak_Acetone: %.6f\nBaseline Resistance (Ohm): %.6f\n Ratio_Acetone: %.6f\n",peak_resist_Ace, baseline_resist_Ace,ratio_Ace);
+}
+
+double ratio_Ace;
+bool store;
+short CO2_arr[store_size] = {0};
+void sample_collection(){
+  vTaskSuspend(HandleSample);
+ 
+  Serial.println("Blow Now");Serial.println();
+  breath_check();
+
+  printf("Recording\n");
+  // while (getTime() - previous < sampletime + 1) {
+    // adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
+    // vTaskSuspend(HandleGraph);
+    vTaskResume(CheckBreath);
+    vTaskResume(HandleData);
+    vTaskSuspend(HandleSample);
+
+    vTaskResume(HandleConc);
+    vTaskSuspend(HandleSample);
+    printf("Complete a trial");
+    vTaskResume(HandleRestoreH);
+    vTaskResume(HandleRestoreS);
+
+
+// //   data_logging(peak, baseline, ratio_CO2[i], 0 , 3 );
+// //   data_logging(bottom_O2, baseline_O2, ratio_O2[i] , 0  , 4 );
+
+  // Serial.print("Peak_Acetone: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
+}
+
+unsigned long getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return (0);
+  }
+  time(&now);
+  return now;
 }
 
 void power_saving(unsigned long last_time){
@@ -309,65 +369,4 @@ void power_saving(unsigned long last_time){
       dacWrite(pumpPin, 0);
     }
   }
-}
-
-double ratio_Ace;
-bool store;
-short CO2_arr[store_size] = {0};
-void sample_collection(){
-  vTaskSuspend(HandleSample);
-  int peak = 0;
-  Serial.println("Blow Now");Serial.println();
-  breath_check();
-
-  printf("Recording\n");
-  // while (getTime() - previous < sampletime + 1) {
-    // adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
-    // vTaskSuspend(HandleGraph);
-    vTaskResume(CheckBreath);
-    vTaskResume(HandleData);
-    vTaskSuspend(HandleSample);
-    // if (store == false) {
-    //   count = count +1 ;
-    //   Serial.println(read_humidity());
-    //   if (read_humidity() > 70 ) {
-    //     store = true;
-    //     Serial.println("Certain a breathe. Recording...");
-    //   }
-    //   if (count== 100){
-    //     printf("This is a failed breath");
-    //     break;
-    //   }
-    // }
-    // CO2_arr[q] = adc_CO2;
-    // Serial.println(q);
-    // delay(1);
-    // q = q + 1;
-  // }
-
-//   delay(5);
-//   printf("Clear ok\n");
-//   peak = concentration_ethanol(temperate,baseline);delay(1);
-//   printf("Find peak ok\n");
-//   double peak_resist_Ace = ads_convert(peak, true);delay(1);
-//   printf("Find resist ok\n");
-//   double baseline_resist_Ace = ads_convert(baseline, true);delay(1);
-//   ratio_Ace =  ratio_calibration(baseline_resist_Ace, peak_resist_Ace, true);delay(1);
-
-// //   data_logging(peak, baseline, ratio_CO2[i], 0 , 3 );
-// //   data_logging(bottom_O2, baseline_O2, ratio_O2[i] , 0  , 4 );
-//   printf("Breath Analysis Result:\n");
-//   printf("Peak_Acetone: %.6f\nBaseline Resistance (Ohm): %.6f\n Ratio_Acetone: %.6f\n",peak_resist_Ace, baseline_resist_Ace,ratio_Ace);
-  // Serial.print("Peak_Acetone: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
-}
-
-unsigned long getTime() {
-  time_t now;
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time");
-    return (0);
-  }
-  time(&now);
-  return now;
 }

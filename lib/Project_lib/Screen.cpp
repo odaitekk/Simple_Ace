@@ -53,7 +53,7 @@ void draw_Frame()
   tft.begin();
   tft.fillScreen(BLACK);
   tft.setRotation(1);
-  delay(500);
+  vTaskDelay(500);
 
   tft.setCursor(10, 10); // set the cursor
   tft.setTextColor(BLUE); // set the colour of the text

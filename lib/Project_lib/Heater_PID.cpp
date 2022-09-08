@@ -15,6 +15,8 @@ void PID_setup(){
 
 void heater_control(){
     Input = analogRead(NTCC);
+    printf("Input: %.2f\n", Input);
     myPID.Compute();
     ledcWrite(colChannel,Output); //220
+    printf("ledcwrite: %.2f\n",Output);
 }
