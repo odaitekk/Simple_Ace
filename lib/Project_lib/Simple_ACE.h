@@ -10,11 +10,11 @@
 #include <TFT_eSPI.h>
 #include <Wire.h>
 #include <EEPROM.h>
-#include <lvgl.h>
+#include <Adafruit_ADS1X15.h>
 
 #define PASSWORD            "10200718"
 #define SSID                "KPTESP32"
-// #define BLYNK_TEMPLATE_ID   "TMPL7mbkwSQ6"
+// #define B\YNK_TEMPLATE_ID   "TMPL7mbkwSQ6"
 // #define BLYNK_DEVICE_NAME   "SimpleCoCo 1"
 // #define BLYNK_AUTH_TOKEN    "pcRimMdKvxJzGShG1ApwLPZzGzt6GKRM"
 // #define BLYNK_PRINT         Serial
@@ -33,7 +33,7 @@
 // #define NTCC                39
 
 //Wrover 2.8" display//
-#define pumpPin             32
+#define pumpPin             25
 #define solPin              33
 #define buz                 13
 #define colPin              27
@@ -55,12 +55,12 @@
 #define colChannel 			2
 #define fanChannel 			3
 
-#define sampletime          10   // Time for the sensor take reading (seconds)//
+#define sampletime          30   // Time for the sensor take reading (seconds)//
 
 const int freq = 5000;
 const int resolution = 8;
 const int zone = 5000;
-const int dutyCycle_pump = 160;
+const int dutyCycle_pump = 100;
 const int dutyCycle_col = 160;
 const double LSB = 0.125 / 1000;
 const int temperate = 55; 
@@ -69,26 +69,23 @@ extern bool clean;
 extern bool store;
 extern short CO2_arr[store_size];
 extern double ratio_Ace ;
-static lv_obj_t *chart1;
-static lv_chart_series_t * ser1;
-static lv_obj_t *prompt;
-static lv_obj_t *wait;
-static lv_obj_t *number;
-static lv_obj_t *hyphen;
+
+extern Adafruit_ADS1115 ads;
 
 void checkSetup();
 void pinSetup();
-void lvgl_Setup();
 void analogSetup();
 
 void sample_collection();
 void power_saving(unsigned long last_time);
 unsigned long getTime();
-void lv_example_chart_2(void);
-void value_label(void);
-void hyphen_label(void);
-void prompt_label(void);
-void wait_label(void);
-void number_label(void);
+void restore_humidity();
+void restore_baseline();
+
+
+double read_humidity(void);
+int16_t read_ADS1115(void);
+
+
 
 #endif 

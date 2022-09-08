@@ -1,46 +1,40 @@
+//This branch is written in Real time Operation System//
+//please handle push pull commit with extra care.//
+#if CONFIG_FREERTOS_UNICORE
+#define ARDUINO_RUNNING_CORE 0 
+#else
+#define ARDUINO_RUNNING_CORE 1 
+#endif
+
 #include <Arduino.h>
 #include "SPIFFS.h"
+#include <Simple_ACE.h>
+#include <RTOS_ACE.h>
+#include <Heater_PID.h>
+#include <Screen.h>
 // #include <BlynkSimpleEsp32.h>
 // BlynkWifi Blynk(_blynkTransport);
-#include <Simple_ACE.h>
-#include <lvgl.h>
-
-// ////////////////////////SPIFFS File//////////////////////////////////////
-// String format_1 = "/";
-// String format_2 = ".txt";
-// String file[255];
 //////////////////////////Request time//////////////////////////////////////
 unsigned long previous_time;
 //////////////////////////functions/////////////////////////////////////////
-int data_logging(double value, double value_1, double value_2, double value_3,  int storage);
-double mapping(double CO2, double O2);
+// int data_logging(double value, double value_1, double value_2, double value_3,  int storage);
+// double mapping(double CO2, double O2);
 ///////////////////////////////////Global Data.//////////////////////////////////////
-double avg_ratio_Ace;
-double avg_ratio_O2 ;
-double rq;
-double map_rq;
-int file_label;
-short CO2_arr[store_size] = {0};
-short O2_arr[store_size] = {0};
-File dat_file_app;
-
-#if LV_USE_LOG != 0
-/* Serial debugging */
-void my_print(const char * buf)
-{
-    Serial.printf(buf);
-    Serial.flush();
-}
-#endif
+// double avg_ratio_Ace;
+// double avg_ratio_O2 ;
+// double rq;
+// double map_rq;
+// int file_label;
+// File dat_file_app;
 
 void setup() {
   Serial.begin(115200);
-  //  tftSetup();
   pinSetup();
   analogSetup();
   checkSetup();
-  lvgl_Setup();
 
+  PID_setup();
+  draw_Frame();
   Serial.println( "Setup done" );
   // use only when data has to write into spiffs //
   // only flush the file when EEPROM is rebooted
@@ -60,39 +54,36 @@ void setup() {
   //     }
   //   }
   // }
-  lv_example_chart_2();
-  value_label();
-  hyphen_label();
-  lv_timer_handler();
   delay(5);
+  begin_RTOS();
 }
 
 void loop() {
-  sample_collection();
+  // sample_collection();
 
-  // Use only when SPIFFS is enabel here//
-  // if ( store == true) {
-  //   file_label = EEPROM.read(EEP_add);
-  //   Serial.println(file_label);
-  //   String filename =  format_1 + (String)file_label + format_2;
-  //   Serial.println(filename);
-  //   // File dat_file_app = SPIFFS.open(filename, FILE_WRITE);
-  //   // for (int i = 0; i < plot_size; i++) {
-  //   //   dat_file_app.print((unsigned long)millis()); dat_file_app.print(" , "); dat_file_app.print(CO2_arr[i]);
-  //   //   Serial.println(i);
-  //   // }
-  //   // dat_file_app.close();
-  //   Serial.println("saved");
-  //   Serial.print(EEP_add); Serial.print("\t"); Serial.println(file_label, DEC);
-  //   file_label = file_label + 1;
-  //   Serial.println(file_label);
-  //   EEPROM.write(EEP_add, file_label);
-  //   EEPROM.commit();
-  // }
+  // // Use only when SPIFFS is enabel here//
+  // // if ( store == true) {
+  // //   file_label = EEPROM.read(EEP_add);
+  // //   Serial.println(file_label);
+  // //   String filename =  format_1 + (String)file_label + format_2;
+  // //   Serial.println(filename);
+  // //   // File dat_file_app = SPIFFS.open(filename, FILE_WRITE);
+  // //   // for (int i = 0; i < plot_size; i++) {
+  // //   //   dat_file_app.print((unsigned long)millis()); dat_file_app.print(" , "); dat_file_app.print(CO2_arr[i]);
+  // //   //   Serial.println(i);
+  // //   // }
+  // //   // dat_file_app.close();
+  // //   Serial.println("saved");
+  // //   Serial.print(EEP_add); Serial.print("\t"); Serial.println(file_label, DEC);
+  // //   file_label = file_label + 1;
+  // //   Serial.println(file_label);
+  // //   EEPROM.write(EEP_add, file_label);
+  // //   EEPROM.commit();
+  // // }
 
-  delay(1000);
-  previous_time = getTime();
-  power_saving(previous_time);
+  // delay(1000);
+  // previous_time = getTime();
+  // power_saving(previous_time);
   // // mapping(avg_ratio_CO2, avg_ratio_O2);
 
   // // Blynk.connect();
