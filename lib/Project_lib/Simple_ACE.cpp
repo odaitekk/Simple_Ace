@@ -5,8 +5,8 @@
 // #include <BlynkSimpleEsp32.h>
 // #include <PID_v1.h>
 
-SHT20 sht;
-TaskHandle_t CheckBreath,HandleSensor,HandleHeater,HandleData,HandleGraph,HandleSample,HandleRestoreH,HandleRestoreS,HandleConc;
+
+TaskHandle_t ConfirmBreath, CheckBreath,HandleSensor,HandleHeater,HandleData,HandleGraph,HandleSample,HandleRestoreH,HandleRestoreS,HandleConc;
 // double Kp=2, Ki=5, Kd=1;
 // double Setpoint = 1550;
 // double Input, Output;
@@ -22,7 +22,7 @@ double upload_buffer;
 double upload_buffer_1;
 double upload_buffer_2;
 double upload_buffer_3; 
-int16_t baseline;
+
 
 // BLYNK_CONNECTED()
 // {
@@ -128,17 +128,19 @@ int16_t read_ADS1115(){
   return value;
 }
 
-void restore_humidity(){
-    int previous = sht.getHumidity();
-    sht.read();
-    Serial.println(sht.getHumidity());
-    if (sht.getHumidity() - previous  < 2) {
-      dacWrite(pumpPin, dutyCycle_pump);
-      printf("Resotre Humidity\n");
-      vTaskSuspend(HandleRestoreH);
-    }  
-}
-
+// void restore_humidity(){
+//     sht.read();
+//     double previous = sht.getHumidity();
+//     sht.read();
+//     Serial.println(sht.getHumidity());
+//     printf("Humid\n");
+//     vTaskDelay(1);
+//     if (sht.getHumidity() - previous  < 2) {
+//       dacWrite(pumpPin, dutyCycle_pump);
+//       printf("Resotre Humidity\n");
+//       vTaskSuspend(NULL);
+//     }  
+// }
 
 double sort_reject(double arr[], int arr_size) {
   double buff;
@@ -175,24 +177,21 @@ double sort_reject(double arr[], int arr_size) {
 }
 
 void breath_check(){
-  while (true) {
-    double arr[5];
-    float humd;
-    double gradient;
-    long previous;  
-    for (int i = 0; i < 5; i++) {
-      sht.read();
-      arr[i] = sht.getHumidity();
-      // printf("Humid: %.2f\n",arr[i]);
-      previous = millis();
-      delay(1);
-    }
-    gradient  = (arr[4] - arr[0]) * 7 ;
-    printf("Grad: %.3f\n",gradient);
-    delay(5);
-    if (gradient > 0.4) {
-      break;
-    }
+  double arr[5];
+  float humd;
+  double gradient;
+  printf("Checking\n");
+  for (int i = 0; i < 5; i++) {
+    sht.read();
+    arr[i] = sht.getHumidity();
+    printf("Humid: %.2f\n",arr[i]);
+  }
+  gradient  = (arr[4] - arr[0]) * 7 ;
+  printf("Grad: %.3f\n",gradient);
+  if (gradient > 0.4) {
+    // vTaskResume(ConfirmBreath);
+    vTaskResume(HandleData);
+    vTaskSuspend(NULL);
   }
 }
 
@@ -242,27 +241,24 @@ int baselineRead(int channel) {
   return int(mean);
 }
 
-int temp;
-int ref;
 void restore_baseline(){
-  temp = baselineRead(CO2_channel );
-  Serial.println(temp);
-  // delay(10);
-  vTaskDelay(10);
-  ref = baselineRead(CO2_channel );
-  Serial.println(ref);
-  // delay(10);
-  vTaskDelay(10);
+  // while(1){
+  //   temp = baselineRead(CO2_channel );
+  //   Serial.println(temp);
 
-  if (temp-ref <3 && temp-ref >-3) {
-    printf("Found Baseline\n");
-    // delay(10);
-    vTaskDelay(10);
-    baseline = temp;
-    printf("Basleine: %d", baseline);
-    vTaskResume(HandleSample);
-    vTaskSuspend(HandleRestoreS);
-  }
+  //   ref = baselineRead(CO2_channel );
+  //   Serial.println(ref);
+
+  //   vTaskDelay(10);
+  //   if (temp-ref <3 && temp-ref >-3) {
+  //     printf("Found Baseline\n");
+  //     baseline = temp;
+  //     printf("Basleine: %d\n", baseline);
+  //     vTaskResume(HandleSensor);
+  //     vTaskResume(CheckBreath); 
+  //     vTaskResume(HandleGraph);
+  //   }
+  // }
 }
 
 double ads_convert(int value, bool resist) {
@@ -303,7 +299,7 @@ double concentration_ethanol( double temp, int baseline) { //reamin to be calibr
   printf("Baseline value is %d.\n", baseline);
   return(peak);
 }
-
+int16_t baseline;
 void calculate_conc(){
   int peak = 0;
   peak = concentration_ethanol(temperate,baseline);vTaskDelay(1);
@@ -319,32 +315,34 @@ void calculate_conc(){
 double ratio_Ace;
 bool store;
 short CO2_arr[store_size] = {0};
-void sample_collection(){
-  vTaskSuspend(HandleSample);
- 
-  Serial.println("Blow Now");Serial.println();
-  breath_check();
+// void sample_collection(){
+//   // vTaskSuspend(HandleSample);
 
-  printf("Recording\n");
-  // while (getTime() - previous < sampletime + 1) {
-    // adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
-    // vTaskSuspend(HandleGraph);
-    vTaskResume(CheckBreath);
-    vTaskResume(HandleData);
-    vTaskSuspend(HandleSample);
+//   vTaskResume(CheckBreath);
+//   vTaskSuspend(HandleSample);
 
-    vTaskResume(HandleConc);
-    vTaskSuspend(HandleSample);
-    printf("Complete a trial");
-    vTaskResume(HandleRestoreH);
-    vTaskResume(HandleRestoreS);
+//   printf("Recording\n");
+//   // while (getTime() - previous < sampletime + 1) {
+//     // adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
+//     // vTaskSuspend(HandleGraph);
+//     vTaskResume(ConfirmBreath);
+//     vTaskResume(HandleData);
+//     vTaskSuspend(HandleSample);
+
+//     vTaskResume(HandleConc);
+//     printf("Where am I?");
+//     vTaskSuspend(HandleSample);
+
+//     printf("Complete a trial");
+//     vTaskResume(HandleRestoreH);
+//     vTaskResume(HandleRestoreS);
 
 
-// //   data_logging(peak, baseline, ratio_CO2[i], 0 , 3 );
-// //   data_logging(bottom_O2, baseline_O2, ratio_O2[i] , 0  , 4 );
+// // //   data_logging(peak, baseline, ratio_CO2[i], 0 , 3 );
+// // //   data_logging(bottom_O2, baseline_O2, ratio_O2[i] , 0  , 4 );
 
-  // Serial.print("Peak_Acetone: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
-}
+//   // Serial.print("Peak_Acetone: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
+// }
 
 unsigned long getTime() {
   time_t now;

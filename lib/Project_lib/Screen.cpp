@@ -2,150 +2,99 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
+#include <SHT2x.h>
+#include <SimpleKalmanFilter.h>
 
-TFT_eSPI tft = TFT_eSPI();  
+TFT_eSPI tft = TFT_eSPI();
+SHT20 sht;
+/** Sprite needed for graph scrolling */
+TFT_eSprite graph1 = TFT_eSprite(&tft);
+SimpleKalmanFilter kf = SimpleKalmanFilter(0.5, 0.5, 0.01);
 
-  int valueBlock[5000];
-  int timeBlock[5000];
-  int locationBlock[5000];
-  int valuePos;
-  int blockPos;
-  int value;
-  int chk;
+
+int rangeL = 2000;
+int rangeH = 18000;
+
+//   int valueBlock[5000];
+//   int timeBlock[5000];
+//   int locationBlock[5000];
+//   int valuePos;
+//   int blockPos;
+//   int value;
+//   int chk;
 
   
-// Editable Variables
-  bool proDebug = 0;
+// // Editable Variables
+//   bool proDebug = 0;
 
-  uint16_t graphColor = BLUE;
-  uint16_t pointColor = BLACK;
-  uint16_t lineColor = GREEN;
+//   uint16_t graphColor = BLUE;
+//   uint16_t pointColor = BLACK;
+//   uint16_t lineColor = GREEN;
 
-  String graphName = "Time Graph";
+//   String graphName = "Time Graph";
 
-  int graphRange = 2000;
-  int markSize = 0;
+//   int graphRange = 2000;
+//   int markSize = 0;
   
-// Calculate Values
-  const int numberOfMarks = 250;
-  const int originX = 45;
-  const int originY = 200;
-  const int sizeX = 270;
-  const int sizeY = 150;
-  const int deviation = 10;
+// // Calculate Values
+//   const int numberOfMarks = 250;
+//   const int originX = 45;
+//   const int originY = 200;
+//   const int sizeX = 270;
+//   const int sizeY = 150;
+//   const int deviation = 10;
   
-  int boxSize = (sizeX / numberOfMarks);
-  int mark[numberOfMarks] ={0};
-  // {(boxSize + deviation), ((boxSize * 2) + deviation), ((boxSize * 3) + deviation), ((boxSize * 4) + deviation), ((boxSize * 5) + deviation), ((boxSize * 6) + deviation), ((boxSize * 7) + deviation), ((boxSize * 8) + deviation)};
+//   int boxSize = (sizeX / numberOfMarks);
+//   int mark[numberOfMarks] ={0};
+//   // {(boxSize + deviation), ((boxSize * 2) + deviation), ((boxSize * 3) + deviation), ((boxSize * 4) + deviation), ((boxSize * 5) + deviation), ((boxSize * 6) + deviation), ((boxSize * 7) + deviation), ((boxSize * 8) + deviation)};
 
-  const int minorSizeY = (originY + 10);
-  const int minorSizeX = (originX - 10);
+//   const int minorSizeY = (originY + 10);
+//   const int minorSizeX = (originX - 10);
 
-  int numberSize = (sizeY / 6);
-  int number[] = {numberSize, (numberSize * 2), (numberSize * 3), (numberSize * 4), (numberSize * 5), (numberSize * 6)};
+//   int numberSize = (sizeY / 6);
+//   int number[] = {numberSize, (numberSize * 2), (numberSize * 3), (numberSize * 4), (numberSize * 5), (numberSize * 6)};
 
-  int numberValue = (graphRange / 6);
-  int val[] = {5000, 6000,7000,8000,9000,10000};
+//   int numberValue = (graphRange / 6);
+//   int val[] = {5000, 6000,7000,8000,9000,10000};
 
 void draw_Frame()
 {
-  // draw title
-  tft.begin();
-  tft.fillScreen(BLACK);
-  tft.setRotation(1);
-  vTaskDelay(500);
 
-  tft.setCursor(10, 10); // set the cursor
-  tft.setTextColor(BLUE); // set the colour of the text
-  tft.setTextSize(4); // set the size of the text
-  tft.println(graphName);
-  
-  for(int i = 0; i<numberOfMarks;i++){
-  mark[i]= boxSize*i+deviation;
-  }
-  // draw outline
-  tft.drawLine(originX, originY, (originX + sizeX), originY, graphColor); //x - axis
-  tft.drawLine(originX, originY, originX, (originY - sizeY), graphColor); //y - axis
-
-  // // draw lables
-  // for(int i = 0; i < numberOfMarks; i++)
-  // {
-  //   tft.drawLine(mark[i], originY, mark[i], minorSizeY, graphColor);
-  // }
-
-  // draw numbers
-  for(int i = 0; i < 6; i++)
-  {
-    tft.drawLine(originX, (originY - number[i]), minorSizeX, (originY - number[i]), graphColor);
-  }
-
-  // draw number values
-  for(int i = 0; i < 6; i++)
-  {
-    tft.setCursor((minorSizeX - 30), (number[i] + numberSize));
-    tft.setTextColor(graphColor);
-    tft.setTextSize(1);
-    tft.println(val[i]);
-  }
-  tft.fillRect((originX + 2), (originY-sizeY ),sizeX, 140, WHITE);
+  tft.init();
+  tft.fillScreen(TFT_BLACK);
+  graph1.createSprite(200, 100);
 }
 
-void draw_Graph(int16_t value)
-{
-  valueBlock[valuePos] = value;
-  
-  if(proDebug)
-  {
-    Serial.println(timeBlock[valuePos]);
-  }
-  
- if(blockPos < 250)
-  {
-    // print the time
-    tft.setCursor((mark[valuePos] - 5), (originY + 16));
-    tft.setTextColor(graphColor, WHITE);
-    tft.setTextSize(1);
-    // tft.println(timeBlock[valuePos]);
+QueueHandle_t Sensor_buff;
+void draw_Graph(double value){
+  sht.read();
+  float H = sht.getHumidity();
+  float F = kf.updateEstimate(H);
+
+//  if(T>2000){
+  graph1.scroll(-1); 
+  // if(xQueueReceive(Sensor_buff, &(value),( TickType_t ) 10) ==pdTRUE){
+    value = (double) (value-rangeL)*(150*3.14-0)/(rangeH-rangeL)+0;
+    // printf("%lf\n",value);
+    graph1.drawFastVLine(199, 100 - 100*(sin((value/150)-(3.14/2))+1),2, TFT_YELLOW);
+    graph1.pushSprite(20, 32);
+  //  }
+    tft.drawString("Humidity",1, 5,2);
+    tft.drawString("100",1, 32);
+    tft.drawString("0",10, 132);
+    // graph2.pushSprite(0, 96);
+    tft.drawFloat(float(H), 1, 70, 180, 6);
+    tft.drawFloat(float(value), 1, 70, 260, 1);
     
-    // map the value
-    locationBlock[valuePos] = map(value, 5000,10000, originY-5, (originY - sizeY)); //map value to y -coordinare on geaph
+    tft.drawString("King's ",1, 250,2);
+    tft.drawString("Technologies",1,270,1);
+    tft.drawString("Phase",1,280,2);
+  // }
+}
 
-    if(valuePos != 0)
-    {
-      tft.drawLine(mark[valuePos]+50, locationBlock[valuePos], mark[(valuePos - 1)]+50, locationBlock[(valuePos - 1)], lineColor);
-      tft.drawLine(mark[valuePos]+50+1, locationBlock[valuePos], mark[(valuePos - 1)]+50+1, locationBlock[(valuePos - 1)], lineColor);
-      tft.drawLine(mark[valuePos]+50+2, locationBlock[valuePos], mark[(valuePos - 1)]+50+2, locationBlock[(valuePos - 1)], lineColor);
-    }
-
-    blockPos= blockPos+1;
-  }else
-    // map the value - current point
-    {
-    tft.fillRect((originX + 2), (originY - sizeY), sizeX, sizeY, WHITE);  
-    locationBlock[valuePos] = map(value, 5000, 10000, originY-5, (originY - sizeY));
-
-    // draw point - current point
-    tft.fillRect((mark[249]), (locationBlock[valuePos] - 1), markSize, markSize, pointColor);
-
-    // draw all points
-    // for(int i = 0; i < 100; i++)
-    // {
-    //   tft.fillRect((mark[(blockPos - (i + 1))] - 1), (locationBlock[(valuePos - i)] - 1), markSize, markSize, pointColor);
-    // }
-
-    // draw all the lines
-    for(int i = 0; i < 249; i++)
-    {
-      tft.drawLine(mark[blockPos - (i + 1)]+50, locationBlock[valuePos - i], mark[blockPos - (i + 2)]+50, locationBlock[valuePos - (i + 1)], lineColor);
-      tft.drawLine(mark[blockPos - (i + 1)]+50+1, locationBlock[valuePos - i], mark[blockPos - (i + 2)]+50+1, locationBlock[valuePos - (i + 1)], lineColor);
-      tft.drawLine(mark[blockPos - (i + 1)]+50+2, locationBlock[valuePos - i], mark[blockPos - (i + 2)]+50+2, locationBlock[valuePos - (i + 1)], lineColor);
-    }
-    
-  }
-  valuePos++;
-  if(valuePos==4999){
-    valuePos = 0;
-    blockPos =0;
-    tft.fillRect((originX + 2), (originY - sizeY), sizeX, sizeY, WHITE);
-  }
+void draw_result(double value){
+  tft.drawString("Acetone",180, 270,1);
+  tft.drawFloat((float)value,180, 290,1);
+  vTaskDelay(100);
+  tft.fillRect(270,170,40,30,TFT_BLACK);
 }

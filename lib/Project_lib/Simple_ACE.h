@@ -55,12 +55,12 @@
 #define colChannel 			2
 #define fanChannel 			3
 
-#define sampletime          70   // Time for the sensor take reading (seconds)//
+#define sampletime          60000   // Time for the sensor take reading (seconds)//
 
 const int freq = 5000;
 const int resolution = 8;
 const int zone = 5000;
-const int dutyCycle_pump = 60;
+const int dutyCycle_pump = 75;
 const int dutyCycle_col = 80;
 const double LSB = 0.125 / 1000;
 const int temperate = 55; 
@@ -71,6 +71,7 @@ extern short CO2_arr[store_size];
 extern double ratio_Ace ;
 
 extern Adafruit_ADS1115 ads;
+extern SHT20 sht;
 
 void checkSetup();
 void pinSetup();
@@ -82,6 +83,8 @@ unsigned long getTime();
 void restore_humidity();
 void restore_baseline();
 void calculate_conc();
+void breath_check();
+int baselineRead(int channel);
 
 
 double read_humidity(void);

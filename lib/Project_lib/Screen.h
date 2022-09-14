@@ -42,7 +42,8 @@
 #define DKGREY    0x4A49
 
 void draw_Frame();
-void draw_Graph(int16_t value);
+void draw_Graph(double value);
+void draw_result(double value);
 
 
 

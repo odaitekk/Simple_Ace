@@ -1,7 +1,7 @@
 //This branch is written in Real time Operation System//
 //please handle push pull commit with extra care.//
 #if CONFIG_FREERTOS_UNICORE
-#define ARDUINO_RUNNING_CORE 0 
+#define ARDUINO_RUNNING_CORE 0
 #else
 #define ARDUINO_RUNNING_CORE 1 
 #endif
@@ -35,7 +35,9 @@ void setup() {
 
   PID_setup();
   draw_Frame();
-  Serial.println( "Setup done" );
+  Serial.println( "Setup done" ); 
+  delay(5);
+  begin_RTOS();
   // use only when data has to write into spiffs //
   // only flush the file when EEPROM is rebooted
   // if (EEPROM.read(EEP_add) == 0) {
@@ -54,8 +56,7 @@ void setup() {
   //     }
   //   }
   // }
-  delay(5);
-  begin_RTOS();
+ 
 }
 
 void loop() {
