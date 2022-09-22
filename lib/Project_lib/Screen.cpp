@@ -50,21 +50,24 @@ void draw_time(int time){
     tft.setTextColor(beige);
     tft.setTextDatum(TC_DATUM); 
     tft.drawFloat(time, 0, 120, 200, 6);
+      tft.drawString ("s",160,215,4);
 }
 void draw_wait(void){
   tft.setTextDatum(TC_DATUM); 
   tft.setTextColor(beige);
-  tft.drawString("Analyzing...",120, 250,4);
+  tft.drawString("Analyzing...",120,250,4);
+  tft.setTextDatum(CC_DATUM);
+
 }
 
 void set_range(int value){
-  rangeL = value -3000;
+  rangeL = value -500;
   if(rangeL<0){
     rangeL = 0;
   }
-  rangeH = (value +3000)*2;
-  printf("RangeL: %d", rangeL);
-  printf("RangeL: %d", rangeH);
+  rangeH = (value +1000);
+  // printf("RangeL: %d", rangeL);
+  // printf("RangeL: %d", rangeH);
 
 }
 
@@ -72,10 +75,10 @@ void draw_sensor(double value){
     graph1.scroll(-1); 
     // Move sprite content 1 pixel left. Default dy is 0
     // value = map(value,rangeL,rangeH,0,100);
-    value =  (value-rangeL)*(150*3.14-0)/(rangeH-rangeL)+0;
-    printf("%f\n",value); 
-    graph1.drawFastVLine(199, 150 - (int)(150*(sin((value/150.0)-(3.14/2.0))+1.0)),5, beige);
-    printf("%d\n",150 - (int)(150*(sin((value/150.0)-(3.14/2.0))+1.0)));
+    value =  (value-rangeL)*(150-0)/(rangeH-rangeL)+0;
+    // printf("%f\n",value); 
+    graph1.drawFastVLine(199, 150 - (int)value,5, beige);
+    // printf("%d\n",150 - (int)(150*(sin((value/150.0)-(3.14/2.0))+1.0)));
     graph1.pushSprite(20, 40);
 }
 // bool store;
@@ -93,13 +96,13 @@ void draw_result(double value){
   if(value > 1 || value <= 0||store == false){
   tft.drawString("Error!",120,120,4); 
   }
-  else if (value > 0.7 && value <= 1){
+  else if (value > 0.97 && value <= 1){
   tft.drawString("Workout More!",120,120,4);
   }
-  else if(value > 0.5 && value <= 0.7){
+  else if(value > 0.95 && value <= 0.97){
   tft.drawString("Pretty Good!",120,120,4);
   }
-  else if(value <= 0.5 && value > 0){
+  else if(value <= 0.95 && value > 0){
     tft.drawString("Excellent Fat Burn!",120,120,4);
   } 
   delay(5000);

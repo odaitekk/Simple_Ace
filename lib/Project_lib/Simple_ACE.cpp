@@ -22,6 +22,9 @@ double upload_buffer;
 double upload_buffer_1;
 double upload_buffer_2;
 double upload_buffer_3; 
+double ratio_Ace;
+bool store;
+int baseline;
 
 // BLYNK_CONNECTED()
 // {
@@ -103,6 +106,7 @@ void checkSetup(){
     EEPROM.write(EEP_add_1,0);
     Serial.println("Rewrite from zero.");
   }
+
   EEPROM.commit();
   int foo = EEPROM.read(EEP_add);
   Serial.println(foo);
@@ -130,7 +134,7 @@ void restore_humidity(){
     // sht20.read();
     Serial.println(sht20.humidity());
     if (sht20.humidity() - previous  < 2) {
-      printf("Humiditty Restored\n");
+      // printf("Humiditty Restored\n");
       dacWrite(pumpChannel, dutyCycle_pump);
       delay(5);
       break;
@@ -142,32 +146,6 @@ double read_humidity(){
   float value;
   value = sht20.humidity();
   return value;
-}
-
-void breath_check(){
-  while (true) {
-    float arr[3];
-    float humd;
-    double gradient;
-    long previous;  
-    for (int i = 0; i < 3; i++) {
-      // sht20.read();
-      arr[i] = sht20.humidity();
-      // printf("%.2f\n",arr[i]);
-      previous= millis();
-      // printf("%d\n",previous);
-    }
-    short adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
-    printf("%d\n",adc_CO2);
-    draw_sensor((double)adc_CO2);
-    // draw_humid(arr[2]);
-    // PID_control();
-    gradient  = (arr[2] - arr[0]) * 7 ;
-    // printf("Grad: %.3f\n",gradient);
-    if (gradient > 0.6) {
-      break;
-    }
-  }
 }
 
 int baselineRead(int channel) {
@@ -197,6 +175,37 @@ int restore_baseline(){
       }
     }
 }
+
+void breath_check(){
+  while (true) {
+    float arr[3];
+    float humd;
+    double gradient;
+    long previous;  
+    for (int i = 0; i < 3; i++) {
+      // sht20.read();
+      arr[i] = sht20.humidity();
+      // printf("%.2f\n",arr[i]);
+      previous= millis();
+      // printf("%d\n",previous);
+    }
+    short adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
+    if (baseline>adc_CO2){
+      baseline = adc_CO2;
+      printf("replaced");
+    }
+    printf("%d\n",adc_CO2);
+    draw_sensor((double)adc_CO2);
+    // draw_humid(arr[2]);
+    // PID_control();
+    gradient  = (arr[2] - arr[0]) * 7 ;
+    // printf("Grad: %.3f\n",gradient);
+    if (gradient > 0.6) {
+      break;
+    }
+  }
+}
+
 void power_saving(unsigned long last_time){
   while(1){
     delay(5);
@@ -211,9 +220,6 @@ void power_saving(unsigned long last_time){
   }
 }
 
-double ratio_Ace;
-bool store;
-int baseline;
 void sample_collection(){
   int q = 0;
   unsigned long previous ;
@@ -223,7 +229,7 @@ void sample_collection(){
   baseline = restore_baseline();
   set_range(baseline);
   delay(1);
-  printf("Blow Now\n");
+  // printf("Blow Now\n");
   breath_check();
   store = false;
   previous = millis();
@@ -238,13 +244,17 @@ void sample_collection(){
       draw_time(time);
     }
     adc_CO2 = ads.readADC_SingleEnded(CO2_channel);
+     if (baseline>adc_CO2){
+      baseline = adc_CO2;
+      printf("replaced");
+    }
     printf("%d\n",adc_CO2);
     draw_sensor((double)adc_CO2); 
     // PID_control();
     if (store == false) {
       count = count +1 ;
       if (count== 100){
-        printf("This is a failed breath");
+        // printf("This is a failed breath");
         break;
       }
       if (read_humidity() > 70) {
@@ -268,8 +278,8 @@ int peak_acetone( double temp) {
   int peak = 0;
   acetone_start = acetone_start * coec;
   acetone_end = acetone_end * coec;
-  printf("%d , %d\n", (int)acetone_start, (int)acetone_end);
-    printf("Find peak ok\n");
+  // printf("%d , %d\n", (int)acetone_start, (int)acetone_end);
+    // printf("Find peak ok\n");
   for ( int i = (int)acetone_start - 1 ; i <= (int) acetone_end - 1; i++) {
     // Serial.println(CO2_arr[i]);
     // printf("%d\n", i);
@@ -313,8 +323,8 @@ double ads_convert(int value, bool resist) {
   volt = value * LSB;      
   const double offset_volt =  5*(100.00/(120.0+100.0)) ; 
   double volt_out = offset_volt+volt;
-  printf("Find resist ok\n");
-  printf("%d\n",value);
+  // printf("Find resist ok\n");
+  // printf("%d\n",value);
   switch (resist) {
     case (false):           //voltage of adc reading 
       Serial.println(volt);
@@ -369,8 +379,8 @@ void output_result(){
   ratio_Ace = ratio_calibration(baseline_resist_Ace, peak_resist_Ace, true);delay(1);
 //   data_logging(peak, baseline, ratio_CO2[i], 0 , 3 );
 //   data_logging(bottom_O2, baseline_O2, ratio_O2[i] , 0  , 4 );
-  printf("Breath Analysis Result:\n");
-  printf("Peak_Acetone: %.6f\nBaseline Resistance (Ohm): %.6f\nRatio_Acetone: %.6f\n",peak_resist_Ace, baseline_resist_Ace,ratio_Ace);
+  // printf("Breath Analysis Result:\n");
+  // printf("Peak_Acetone: %.6f\nBaseline Resistance (Ohm): %.6f\nRatio_Acetone: %.6f\n",peak_resist_Ace, baseline_resist_Ace,ratio_Ace);
   draw_result(ratio_Ace);// Serial.print("Peak_Acetone: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
 }
 
