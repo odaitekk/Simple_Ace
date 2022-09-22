@@ -2,12 +2,12 @@
 #include <TFT_eSPI.h>
 #include <Simple_ACE.h>
 
-#include "Asset_2.h"
-#include "Asset_7.h"
-#include "Asset_8.h"
-#include "Asset_10.h"
-#include "Asset_13.h"
-#include "Asset_14.h"
+#include "Screenimage\Asset_2.h"
+#include "Screenimage\Asset_7.h"
+#include "Screenimage\Asset_8.h"
+#include "Screenimage\Asset_10.h"
+#include "Screenimage\Asset_13.h"
+#include "Screenimage\Asset_14.h"
 
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite graph1 = TFT_eSprite(&tft);
@@ -58,8 +58,14 @@ void draw_wait(void){
 }
 
 void set_range(int value){
-  rangeL = value -1000;
+  rangeL = value -3000;
+  if(rangeL<0){
+    rangeL = 0;
+  }
   rangeH = (value +3000)*2;
+  printf("RangeL: %d", rangeL);
+  printf("RangeL: %d", rangeH);
+
 }
 
 void draw_sensor(double value){
@@ -67,8 +73,9 @@ void draw_sensor(double value){
     // Move sprite content 1 pixel left. Default dy is 0
     // value = map(value,rangeL,rangeH,0,100);
     value =  (value-rangeL)*(150*3.14-0)/(rangeH-rangeL)+0;
-    // printf("%f\n",value); 
+    printf("%f\n",value); 
     graph1.drawFastVLine(199, 150 - (int)(150*(sin((value/150.0)-(3.14/2.0))+1.0)),5, beige);
+    printf("%d\n",150 - (int)(150*(sin((value/150.0)-(3.14/2.0))+1.0)));
     graph1.pushSprite(20, 40);
 }
 // bool store;
