@@ -96,10 +96,10 @@ void draw_result(double value){
   if(value > 1 || value <= 0||store == false){
   tft.drawString("Error!",120,120,4); 
   }
-  else if (value > 0.97 && value <= 1){
+  else if (value > 0.990 && value <= 1){
   tft.drawString("Workout More!",120,120,4);
   }
-  else if(value > 0.95 && value <= 0.97){
+  else if(value > 0.95 && value <= 0.990){
   tft.drawString("Pretty Good!",120,120,4);
   }
   else if(value <= 0.95 && value > 0){

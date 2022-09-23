@@ -158,6 +158,7 @@ int baselineRead(int channel) {
   for (int i = 0; i < baseSample; ++i) {
     mean += toSort[i];
   }
+  draw_sensor((double)ads.readADC_SingleEnded(CO2_channel)); 
   mean /= baseSample;
   return int(mean);
 }
@@ -196,6 +197,12 @@ void breath_check(){
     }
     printf("%d\n",adc_CO2);
     draw_sensor((double)adc_CO2);
+    if(analogRead(NTCC)>1700){
+     ledcWrite(colChannel,255); //220
+    }
+    else if(analogRead(NTCC)<1300){
+      ledcWrite(colChannel,0); //220
+    }
     // draw_humid(arr[2]);
     // PID_control();
     gradient  = (arr[2] - arr[0]) * 7 ;
@@ -257,11 +264,18 @@ void sample_collection(){
         // printf("This is a failed breath");
         break;
       }
-      if (read_humidity() > 70) {
+      if (read_humidity() > 60) {
         store = true;
         Serial.println("Certain a breathe. Recording...");
       }
     }
+    if(analogRead(NTCC)>1700){
+     ledcWrite(colChannel,255); //220
+    }
+    else if(analogRead(NTCC)<1300){
+      ledcWrite(colChannel,0); //220
+    }
+
     CO2_arr[q] = adc_CO2;
     // Serial.println(q);delay(1);
     q = q + 1;
