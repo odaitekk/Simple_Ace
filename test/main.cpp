@@ -24,9 +24,9 @@ int file_label;
 void setup() {
   Serial.begin(115200);
   tft_setup();
-  pinSetup();
-  analogSetup();
-  checkSetup();
+  // pinSetup();
+  // analogSetup();
+  // checkSetup();
   draw_framework();
   Serial.println( "Setup done" );
   // use only when data has to write into spiffs //

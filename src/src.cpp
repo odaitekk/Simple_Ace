@@ -9,6 +9,11 @@
 */
 
 #include <NimBLEDevice.h>
+#include <Arduino.h>
+// #include <BlynkSimpleEsp32.h>
+// BlynkWifi Blynk(_blynkTransport);
+#include <Simple_ACE.h>
+#include <Screen.h>
 
 static NimBLEServer* pServer;
 
@@ -96,7 +101,7 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
      */
     void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) {
         String str = ("Notification/Indication status code: ");
-        str += status;[op]
+        str += status;
         str += ", return code: ";
         str += code;
         str += ", ";
@@ -149,7 +154,7 @@ void setup() {
     Serial.println("Starting NimBLE Server");
 
     /** sets device name */
-    NimBLEDevice::init("NimBLE-Arduino");
+    NimBLEDevice::init("NimBLE-Arduino");  // call initialize function of class NBLEDevice with variable name , 
 
     /** Optional: set the transmit power, default is 3db */
 #ifdef ESP_PLATFORM
@@ -174,8 +179,9 @@ void setup() {
     //NimBLEDevice::setSecurityAuth(false, false, true);
     NimBLEDevice::setSecurityAuth(/*BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM |*/ BLE_SM_PAIR_AUTHREQ_SC);
 
-    pServer = NimBLEDevice::createServer();
-    pServer->setCallbacks(new ServerCallbacks());
+    pServer = NimBLEDevice::createServer(); //  create server in class NBLE and refer to class pserver
+    pServer->setCallbacks(new ServerCallbacks()); // set the callbacks for connection interacting with created server
+    //pointer of pserver assigned to set callbacks parameters of a class of callback function
 
     NimBLEService* pDeadService = pServer->createService("DEAD");
     NimBLECharacteristic* pBeefCharacteristic = pDeadService->createCharacteristic(

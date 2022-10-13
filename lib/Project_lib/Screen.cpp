@@ -129,9 +129,9 @@ void draw_result(double value){
 
 void TouchScreen(){
     if(stage == 0){
-      draw_framework();
-      sample_collection();
-      output_result();
+      // draw_framework();
+      // sample_collection();
+      // output_result();
       
         // float T = millis();
         // // float H = sht20.humidity();
