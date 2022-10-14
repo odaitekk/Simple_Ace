@@ -193,7 +193,7 @@ void setup() {
                                                NIMBLE_PROPERTY::WRITE_ENC   // only allow writing if paired / encrypted
                                               );
 
-    pBeefCharacteristic->setValue("Burger");
+    pBeefCharacteristic->setValue("Burger"); //  fucntion to set value of characteric 
     pBeefCharacteristic->setCallbacks(&chrCallbacks);
 
     /** 2904 descriptors are a special case, when createDescriptor is called with
@@ -206,7 +206,7 @@ void setup() {
     pBeef2904->setCallbacks(&dscCallbacks);
 
 
-    NimBLEService* pBaadService = pServer->createService("BAAD");
+    NimBLEService* pBaadService = pServer->createService("BAAD"); // get into the function inside class NBLE 
     NimBLECharacteristic* pFoodCharacteristic = pBaadService->createCharacteristic(
                                                "F00D",
                                                NIMBLE_PROPERTY::READ |
@@ -214,7 +214,9 @@ void setup() {
                                                NIMBLE_PROPERTY::NOTIFY
                                               );
 
-    pFoodCharacteristic->setValue("Fries");
+    int r = random(0,100);
+    const char *streaming = String(r).c_str();
+    pFoodCharacteristic->setValue(String(r));
     pFoodCharacteristic->setCallbacks(&chrCallbacks);
 
     /** Note a 0x2902 descriptor MUST NOT be created as NimBLE will create one automatically
