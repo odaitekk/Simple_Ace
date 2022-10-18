@@ -93,6 +93,12 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
      */
     void onNotify(NimBLECharacteristic* pCharacteristic) {
         Serial.println("Sending notification to clients");
+                int r = random(0,100);
+                int q = random(100,200);
+                String tostream = String(r) + ","+ String(q) + "," + ",";
+                // const char *streaming = tostream.c_str();
+                pCharacteristic->setValue(tostream);
+
     };
 
 
@@ -154,7 +160,7 @@ void setup() {
     Serial.println("Starting NimBLE Server");
 
     /** sets device name */
-    NimBLEDevice::init("NimBLE-Arduino");  // call initialize function of class NBLEDevice with variable name , 
+    NimBLEDevice::init("KPT Beagle");  // call initialize function of class NBLEDevice with variable name , 
 
     /** Optional: set the transmit power, default is 3db */
 #ifdef ESP_PLATFORM
@@ -183,28 +189,6 @@ void setup() {
     pServer->setCallbacks(new ServerCallbacks()); // set the callbacks for connection interacting with created server
     //pointer of pserver assigned to set callbacks parameters of a class of callback function
 
-    NimBLEService* pDeadService = pServer->createService("DEAD");
-    NimBLECharacteristic* pBeefCharacteristic = pDeadService->createCharacteristic(
-                                               "BEEF",
-                                               NIMBLE_PROPERTY::READ |
-                                               NIMBLE_PROPERTY::WRITE |
-                               /** Require a secure connection for read and write access */
-                                               NIMBLE_PROPERTY::READ_ENC |  // only allow reading if paired / encrypted
-                                               NIMBLE_PROPERTY::WRITE_ENC   // only allow writing if paired / encrypted
-                                              );
-
-    pBeefCharacteristic->setValue("Burger"); //  fucntion to set value of characteric 
-    pBeefCharacteristic->setCallbacks(&chrCallbacks);
-
-    /** 2904 descriptors are a special case, when createDescriptor is called with
-     *  0x2904 a NimBLE2904 class is created with the correct properties and sizes.
-     *  However we must cast the returned reference to the correct type as the method
-     *  only returns a pointer to the base NimBLEDescriptor class.
-     */
-    NimBLE2904* pBeef2904 = (NimBLE2904*)pBeefCharacteristic->createDescriptor("2904");
-    pBeef2904->setFormat(NimBLE2904::FORMAT_UTF8);
-    pBeef2904->setCallbacks(&dscCallbacks);
-
 
     NimBLEService* pBaadService = pServer->createService("BAAD"); // get into the function inside class NBLE 
     NimBLECharacteristic* pFoodCharacteristic = pBaadService->createCharacteristic(
@@ -213,11 +197,6 @@ void setup() {
                                                NIMBLE_PROPERTY::WRITE |
                                                NIMBLE_PROPERTY::NOTIFY
                                               );
-
-    int r = random(0,100);
-    const char *streaming = String(r).c_str();
-    pFoodCharacteristic->setValue(String(r));
-    pFoodCharacteristic->setCallbacks(&chrCallbacks);
 
     /** Note a 0x2902 descriptor MUST NOT be created as NimBLE will create one automatically
      *  if notification or indication properties are assigned to a characteristic.
@@ -231,16 +210,19 @@ void setup() {
                                                NIMBLE_PROPERTY::WRITE_ENC, // only allow writing if paired / encrypted
                                                20
                                               );
+                                                  
+ 
+    pFoodCharacteristic->setValue("--");
+    pFoodCharacteristic->setCallbacks(&chrCallbacks);
+
     pC01Ddsc->setValue("Send it back!");
     pC01Ddsc->setCallbacks(&dscCallbacks);
 
     /** Start the services when finished creating all Characteristics and Descriptors */
-    pDeadService->start();
     pBaadService->start();
 
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     /** Add the services to the advertisment data **/
-    pAdvertising->addServiceUUID(pDeadService->getUUID());
     pAdvertising->addServiceUUID(pBaadService->getUUID());
     /** If your device is battery powered you may consider setting scan response
      *  to false as it will extend battery life at the expense of less data sent.
@@ -259,10 +241,12 @@ void loop() {
         if(pSvc) {
             NimBLECharacteristic* pChr = pSvc->getCharacteristic("F00D");
             if(pChr) {
-                pChr->notify(true);
+                pChr->notify(true);    
+
             }
         }
     }
+
 
   delay(2000);
 }

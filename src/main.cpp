@@ -2,6 +2,7 @@
 // #include <BlynkSimpleEsp32.h>
 // BlynkWifi Blynk(_blynkTransport);
 #include <Simple_ACE.h>
+#include "ALE.h"
 #include <Screen.h>
 
 // ////////////////////////SPIFFS File//////////////////////////////////////
@@ -28,6 +29,8 @@ void setup() {
   // analogSetup();
   // checkSetup();
   draw_framework();
+  ALE_setup();
+
   Serial.println( "Setup done" );
   // use only when data has to write into spiffs //
   // only flush the file when EEPROM is rebooted
@@ -50,8 +53,9 @@ void setup() {
 }
 
 void loop() {
-
-  TouchScreen();
+  ALE_advertise();
+  ALE_notify();
+  // TouchScreen();
   // if(click a button){
   //   enter calibration mode
   // }  
