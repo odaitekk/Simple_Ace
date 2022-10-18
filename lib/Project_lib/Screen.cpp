@@ -5,6 +5,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <EEPROM.h>
+#include "ALE.h"
 
 #include "Asset_2.h"
 #include "Asset_7.h"
@@ -18,6 +19,7 @@
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite graph1 = TFT_eSprite(&tft);
 extern float ref_position[2];
+float sample_1 =0;
 
 int rangeL = 0;
 int rangeH = 8000;
@@ -205,6 +207,7 @@ void TouchScreen(){
         // DrawHomescreen();
         stage = 0;
         tft.fillScreen(TFT_NEIGHBOUR_GREEN);
+        sample_1 +=5;
         ResetXY();
       }
       else if(t_x > 75 && t_x < 115  && t_y >20  && t_y < 290){ //PID_controller
