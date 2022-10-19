@@ -337,6 +337,8 @@ double ads_convert(int value, bool resist) {
   }
 }
 
+// float sample_1 = 0;
+// float sample_2 = 0;
 
 void output_result(){
   int CO2_peak = peak_value(0);
@@ -353,6 +355,8 @@ void output_result(){
   printf("peal_value: %.6f, Baseline Resistance (Ohm): %.6f, CO2(%): %.6f\n", peak_resist_CO2 , baseline_resist , conc_CO2);
   printf("peal_value: %.6f, Baseline Resistance (Ohm): %.6f, Ratio_Acetone: %.6f\n", peak_resist_Ace , baseline_resist , conc_Ace);
   draw_result(conc_Ace,conc_CO2);// Serial.print("peal_value: "); Serial.println(peak_resist_Ace, 6); Serial.print("Baseline Resistance (Ohm): "); Serial.println(baseline_resist_Ace, 6); Serial.print("Ratio_Acetone: "); Serial.println(ratio_Ace, 6);
+  // sample_1 = conc_CO2;
+  // sample_2 = conc_Ace;
 }
 
 

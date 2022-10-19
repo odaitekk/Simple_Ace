@@ -12,7 +12,7 @@ extern float sample_1;
 extern float sample_2;
 float sample_3;
 float sample_4;
-
+String tostream;
 /**  None of these are required as they will be handled by the library with defaults. **
  **                       Remove as you see fit for your needs                        */
 class ServerCallbacks: public NimBLEServerCallbacks {
@@ -164,9 +164,9 @@ void ALE_setup(){
     //pointer of pserver assigned to set callbacks parameters of a class of callback function
 
 
-    NimBLEService* pBaadService = pServer->createService("5e40805e-4eb8-11ed-bdc3-0242ac120002"); // get into the function inside class NBLE 
-    NimBLECharacteristic* pFoodCharacteristic = pBaadService->createCharacteristic(
-                                               "F00D",
+    NimBLEService* pBreathServie = pServer->createService("5e40805e-4eb8-11ed-bdc3-0242ac120002"); // get into the function inside class NBLE 
+    NimBLECharacteristic* pSensorCharacteristic = pBreathServie->createCharacteristic(
+                                               "d5dd2cac-4f6c-11ed-bdc3-0242ac120002",
                                                NIMBLE_PROPERTY::READ |
                                                NIMBLE_PROPERTY::WRITE |
                                                NIMBLE_PROPERTY::NOTIFY
@@ -177,7 +177,7 @@ void ALE_setup(){
      */
 
     /** Custom descriptor: Arguments are UUID, Properties, max length in bytes of the value */
-    NimBLEDescriptor* pC01Ddsc = pFoodCharacteristic->createDescriptor(
+    NimBLEDescriptor* pC01Ddsc = pSensorCharacteristic->createDescriptor(
                                                "887d6dd2-4eb8-11ed-bdc3-0242ac120002",
                                                NIMBLE_PROPERTY::READ |
                                                NIMBLE_PROPERTY::WRITE|
@@ -186,14 +186,14 @@ void ALE_setup(){
                                               );
                                                   
  
-    pFoodCharacteristic->setValue("--");
-    pFoodCharacteristic->setCallbacks(&chrCallbacks);
+    pSensorCharacteristic->setValue("--");
+    pSensorCharacteristic->setCallbacks(&chrCallbacks);
 
     pC01Ddsc->setValue("Send it back!");
     pC01Ddsc->setCallbacks(&dscCallbacks);
 
     /** Start the services when finished creating all Characteristics and Descriptors */
-    pBaadService->start();
+    pBreathServie->start();
     printf("SETup Done.\n");
 
 }
@@ -201,8 +201,8 @@ void ALE_setup(){
 void ALE_advertise(){
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     /** Add the services to the advertisment data **/
-    NimBLEService* pBaadService = pServer->createService("5e40805e-4eb8-11ed-bdc3-0242ac120002");
-    pAdvertising->addServiceUUID(pBaadService->getUUID());
+    NimBLEService* pBreathServie = pServer->createService("5e40805e-4eb8-11ed-bdc3-0242ac120002");
+    pAdvertising->addServiceUUID(pBreathServie->getUUID());
     /** If your device is battery powered you may consider setting scan response
      *  to false as it will extend battery life at the expense of less data sent.
      */
