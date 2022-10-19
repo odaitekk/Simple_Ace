@@ -1,9 +1,4 @@
 
-
-
-
-
-
 #include "ALE.h"
 #include <NimBLEDevice.h>
 #include <Arduino.h>
@@ -15,8 +10,9 @@
 static NimBLEServer* pServer;
 extern float sample_1;
 extern float sample_2;
- float sample_3;
- float sample_4;
+float sample_3;
+float sample_4;
+
 /**  None of these are required as they will be handled by the library with defaults. **
  **                       Remove as you see fit for your needs                        */
 class ServerCallbacks: public NimBLEServerCallbacks {
@@ -91,13 +87,13 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
     /** Called before notification or indication is sent,
      *  the value can be changed here before sending if desired.
      */
+
     void onNotify(NimBLECharacteristic* pCharacteristic) {
         Serial.println("Sending notification to clients");
-        int q = random(100,200); //variable 
-        sample_3 =100;
-        sample_4 = 200.4;
-        String tostream = String(sample_1) + ","+ String(q) + ","+ String(sample_3) + ","+ String(sample_4) ;
-        // const char *streaming = tostream.c_str();
+        // int q = 63.1; //variable 
+        // sample_3 =100;
+        // sample_4 = 200.4;
+        // String tostream = String(sample_1) + ","+ String(q) + ","+ String(sample_3) + ","+ String(sample_4) ;
         pCharacteristic->setValue(tostream);
     };
 
@@ -198,7 +194,7 @@ void ALE_setup(){
 
     /** Start the services when finished creating all Characteristics and Descriptors */
     pBaadService->start();
-    printf("SETup Done.");
+    printf("SETup Done.\n");
 
 }
 
@@ -214,24 +210,28 @@ void ALE_advertise(){
     pAdvertising->start();
 
     Serial.println("Advertising Started");
+    // draw_BLE();
 }
 
 float old_1;
 float old_2;
 float old_3;
 float old_4;
+
 void ALE_notify(){
      if(pServer->getConnectedCount()) {
         NimBLEService* pSvc = pServer->getServiceByUUID("5e40805e-4eb8-11ed-bdc3-0242ac120002");
-        printf("Get Service UUID");
+        // printf("Get Service UUID");
         if(pSvc) {
             NimBLECharacteristic* pChr = pSvc->getCharacteristic("F00D");
-            printf("Get Charatistic UUID");
+            // printf("Get Charatistic UUID");
             if(pChr) {
                 // if(sample_1 !=old_1 || sample_2 != old_2 || sample_3 !=old_3 || sample_4 != old_4){
-                    pChr->notify(true);
-                    printf("Get notify");  
-                // }
+                int q = 63.1; //variable 
+                sample_3 = 0.0;
+                sample_4 = 0.0;
+                tostream = String(sample_1) + ","+ String(sample_2) + ","+ String(sample_3) + ","+ String(sample_4) ;
+                pChr->notify(true);
             }
         }
     }

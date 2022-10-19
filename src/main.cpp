@@ -49,13 +49,13 @@ void setup() {
   //     }
   //   }
   // }
-  ALE_advertise();
+  // ALE_advertise();
 }
 
 void loop() {
   
-  ALE_notify();
-  delay(1);
+
+  // delay(1);
   TouchScreen();
 
   // Use only when SPIFFS is enabel here//

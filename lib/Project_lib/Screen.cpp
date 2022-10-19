@@ -15,11 +15,14 @@
 #include "Asset_14.h"
 #include "setting.h"
 #include "Beagle.h"
+#include "BLE_Connect.h"
+
 
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite graph1 = TFT_eSprite(&tft);
 extern float ref_position[2];
-float sample_1 =0;
+float sample_1 = 0;
+float sample_2 = 0;
 
 int rangeL = 0;
 int rangeH = 8000;
@@ -42,15 +45,9 @@ void tft_setup(){
   graph1.setScrollRect(0, 0, 200,150, TFT_NEIGHBOUR_GREEN); 
 }
 
-void DrawHomescreen(){
-    tft.fillScreen(TFT_NEIGHBOUR_GREEN);
-    // tft.fillRoundRect(180, 0, 60, 60,30, TFT_NEIGHBOUR_GREEN);
-    // tft.drawRoundRect(180, 0, 60, 60, 30, TFT_WHITE);
-    tft.pushImage(180, 260, settingWidth  ,settingHeight, setting);
-    
+void draw_BLE(){ /// doenst work and stalled the programm
+  tft.pushImage(80, 50, BLE_w  ,BLE_h, BLE_Connect);
 }
-
-
 
 void ResetXY(){
   t_x = 0;
@@ -146,7 +143,6 @@ void draw_result(double ace, double co2){
 }
 
   void HomeScreen(){
-
     tft.pushImage(20,80,BeagleWidth, BeagleHeight, Beagle);
     tft.setTextDatum(0);
     tft.setTextColor(TFT_WHITE, TFT_NEIGHBOUR_GREEN);
@@ -206,8 +202,9 @@ void TouchScreen(){
       if(t_x > 10 && t_x < 50  && t_y >20  && t_y < 290){              //return button
         // DrawHomescreen();
         stage = 0;
+        sample_1+=5;
         tft.fillScreen(TFT_NEIGHBOUR_GREEN);
-        sample_1 +=5;
+        ALE_notify();
         ResetXY();
       }
       else if(t_x > 75 && t_x < 115  && t_y >20  && t_y < 290){ //PID_controller
@@ -242,15 +239,21 @@ void TouchScreen(){
         tft.drawString("START", 50,270,2);
       }
       else if (t_x > 200 && t_x < 240  && t_y >20  && t_y < 290){ //OTA Setting
+        ResetXY();
+        printf("stage4 \n");
         tft.fillScreen(TFT_NEIGHBOUR_GREEN);
         tft.pushImage(180, 260, settingWidth  ,settingHeight, setting);
         tft.fillRoundRect(10, 10, 220, 30,15 ,TFT_NEIGHBOUR_BLUE);
         tft.setTextColor(TFT_WHITE, TFT_NEIGHBOUR_BLUE);
-        tft.drawString("OTA Setting", 80,15,2);
-        printf("stage4 \n");
+        tft.setTextDatum(4);
+        tft.drawString("BLUETOOTH Setting", 120,25,2);
+
+        tft.fillRect(10,250,80,40,TFT_NEIGHBOUR_BLUE);
+        tft.setTextColor(TFT_WHITE,TFT_NEIGHBOUR_BLUE);     //Start Button
+        tft.drawString("Advertise", 50,270,2);
+        
         
         stage = 4;
-        ResetXY();
       } 
     }
 
@@ -304,6 +307,11 @@ void TouchScreen(){
         EEPROM.end();
         delay(500);
       } 
+    }
+    if(stage ==4){
+      if(t_x > 22 && t_x < 47  && t_y >13  && t_y < 108){
+        ALE_advertise();
+      }
     }
   }
 }
