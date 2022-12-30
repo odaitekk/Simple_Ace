@@ -69,7 +69,9 @@ int numMin = -1;
 void tft_setup()
 {
   tft.init();
+  delay(1000);
   tft.fillScreen(TFT_NEIGHBOUR_GREEN);
+  delay(1000);
   tft.setSwapBytes(true);
   tft.setRotation(2);
 
