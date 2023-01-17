@@ -1,0 +1,8 @@
+bodmer/TFT_eSPI@^2.4.75
+adafruit/Adafruit ADS1X15@^2.4.0
+br3ttb/PID@^1.2.1
+u-fire/uFire SHT20@^1.1.1
+robtillaart/SHT2x@^0.2.0
+blynkkk/Blynk@^1.1.0
+dfrobot/DFRobot_SHT20@^1.0.0
+h2zero/NimBLE-Arduino@^1.4.0
